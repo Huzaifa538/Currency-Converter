@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Currency Converter</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+  .box { background: #16213e; padding: 30px; border-radius: 12px; width: 100%; max-width: 420px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+  h1 { text-align: center; margin-bottom: 20px; font-size: 22px; }
+  label { display: block; margin: 12px 0 6px; font-size: 14px; color: #aaa; }
+  input, select { width: 100%; padding: 12px; border: 1px solid #333; border-radius: 8px; background: #0f0f23; color: #eee; font-size: 16px; }
+  .row { display: flex; gap: 10px; align-items: flex-end; }
+  .row > div { flex: 1; }
+  .swap { background: #0e75b6; color: #fff; border: none; border-radius: 8px; padding: 12px 14px; font-size: 18px; cursor: pointer; margin-bottom: 1px; }
+  .swap:hover { background: #0c639b; }
+  button.convert { width: 100%; margin-top: 18px; padding: 14px; background: #0e75b6; color: #fff; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+  button.convert:hover { background: #0c639b; }
+  .result { margin-top: 20px; text-align: center; font-size: 24px; font-weight: bold; min-height: 36px; }
+  .rate { text-align: center; color: #aaa; font-size: 13px; margin-top: 8px; }
+</style>
+</head>
+<body>
+  <div class="box">
+    <h1>Currency Converter</h1>
+    <label>Amount</label>
+    <input type="number" id="amount" value="1" min="0">
+    <div class="row">
+      <div><label>From</label><select id="from"></select></div>
+      <button class="swap" onclick="swapCurrencies()" title="Swap">⇄</button>
+      <div><label>To</label><select id="to"></select></div>
+    </div>
+    <button class="convert" onclick="convert()">Convert</button>
+    <div class="result" id="result"></div>
+    <div class="rate" id="rate"></div>
+  </div>
+<script>
+  // popular currencies
+  const currencies = ["USD", "EUR", "GBP", "PKR", "INR", "AED", "SAR", "CNY", "JPY", "CAD", "AUD", "CHF", "TRY", "MYR", "SGD"];
+  const fromSelect = document.getElementById('from');
+  const toSelect = document.getElementById('to');
+  // fill the dropdowns
+  currencies.forEach(code => {
+    fromSelect.innerHTML += `<option value="${code}">${code}</option>`;
+    toSelect.innerHTML += `<option value="${code}">${code}</option>`;
+  });
+  fromSelect.value = "USD";
+  toSelect.value = "PKR";
+  // swap from and to
+  function swapCurrencies() {
+    const temp = fromSelect.value;
+    fromSelect.value = toSelect.value;
+    toSelect.value = temp;
+    convert();
+  }
+  async function convert() {
+    const amount = parseFloat(document.getElementById('amount').value);
+    const from = fromSelect.value;
+    const to = toSelect.value;
+    const resultDiv = document.getElementById('result');
+    const rateDiv = document.getElementById('rate');
+    if (!amount || amount <= 0) { alert("Please enter an amount"); return; }
+    resultDiv.textContent = "...";
+    rateDiv.textContent = "";
+    try {
+      // free rates, no key needed
+      const res = await fetch(`https://open.er-api.com/v6/latest/${from}`);
+      const data = await res.json();
+      if (data.result !== "success") throw new Error("Could not load rates");
+      const rate = data.rates[to];
+      if (!rate) throw new Error("Currency not supported");
+      const converted = (amount * rate).toFixed(2);
+      resultDiv.textContent = `${amount} ${from} = ${converted} ${to}`;
+      rateDiv.textContent = `1 ${from} = ${rate.toFixed(4)} ${to}`;
+    } catch (error) { resultDiv.textContent = ""; alert(error.message); }
+  }
+  // convert on load
+  convert();
+</script>
+</body>
+</html>
